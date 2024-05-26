@@ -1,29 +1,42 @@
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import ToDoCard from "./src/Components/ToDoCard";
-import { TodoProvider } from "./src/Context/todoContext";
+import { TodoProvider, useTodo } from "./src/Context/todoContext";
+import AddToDo from "./src/Layouts/AddToDo";
+import Navbar from "./src/Layouts/Navbar";
 
-export default function App() {
+const App: React.FC = () => {
+  const { todos } = useTodo();
+
+  const [Page, setPage] = useState<string>("Home");
+
   return (
-    <TodoProvider>
-      <View style={styles.container}>
-        <Text style={styles.appTitle}>ToDo App</Text>
+    <View style={styles.container}>
+      <Text style={styles.appTitle}>ToDo App</Text>
+      <Navbar Page={Page} setPage={setPage} />
+      {Page === "Home" ? (
         <ScrollView style={styles.todoContainer}>
-          {/* mapping area */}
-          <ToDoCard onPress={() => alert("hi")} title="Title1" />
-          <ToDoCard title="Title2" />
-          <ToDoCard title="Title3" />
-          {/* mapping area */}
+          {todos.map((todo) => (
+            <ToDoCard
+              key={todo.id}
+              id={todo.id}
+              completed={todo.completed}
+              title={todo.title}
+            />
+          ))}
         </ScrollView>
-      </View>
-    </TodoProvider>
+      ) : Page === "Add" ? (
+        <AddToDo />
+      ) : null}
+    </View>
   );
-}
+};
+
+const AppWrapper: React.FC = () => (
+  <TodoProvider>
+    <App />
+  </TodoProvider>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -54,3 +67,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 });
+
+export default AppWrapper;

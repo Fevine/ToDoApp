@@ -1,8 +1,16 @@
-import { FC, ReactNode, createContext, useContext, useState } from "react";
+import {
+  FC,
+  ReactNode,
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+} from "react";
+import uuid from "react-native-uuid";
 
 // Define the shape of a Todo item
-interface Todo {
-  id: number;
+export interface Todo {
+  id: string;
   title: string;
   text: string;
   completed: boolean;
@@ -11,28 +19,64 @@ interface Todo {
 // Define the context type
 interface TodoContextType {
   todos: Todo[];
+  setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
   addTodo: (text: string, title: string) => void;
-  toggleTodo: (id: number) => void;
+  removeTodo: (id: string) => void;
+  toggleTodo: (id: string) => void;
 }
 
 // Create the context with a default value
 const todoContext = createContext<TodoContextType | undefined>(undefined);
 
-interface PrividerProps {
+interface ProviderProps {
   children: ReactNode;
 }
 
 // Provider
-export const TodoProvider: FC<PrividerProps> = ({ children }) => {
-  const [ToDos, setToDos] = useState<Todo[]>([]);
+export const TodoProvider: FC<ProviderProps> = ({ children }) => {
+  const [todos, setTodos] = useState<Todo[]>([]);
 
   function addTodo(text: string, title: string) {
-    
+    const newTodo: Todo = {
+      id: uuid.v4() as string,
+      title: title.toUpperCase(),
+      text: text,
+      completed: false,
+    };
+
+    setTodos([...todos, newTodo]);
   }
 
-  const data: any = { ToDos, setToDos };
+  function removeTodo(id: string) {
+    setTodos(todos.filter((x) => x.id !== id));
+  }
 
-  return <todoContext.Provider value={data}>{children}</todoContext.Provider>;
+  function toggleTodo(id: string) {
+    setTodos(
+      todos.map((todo) =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
+  }
+
+  const value = useMemo(
+    () => ({
+      todos,
+      setTodos,
+      addTodo,
+      removeTodo,
+      toggleTodo,
+    }),
+    [todos]
+  );
+
+  return <todoContext.Provider value={value}>{children}</todoContext.Provider>;
 };
 
-export const useToDo = () => useContext(todoContext);
+export const useTodo = () => {
+  const context = useContext(todoContext);
+  if (context === undefined) {
+    throw new Error("useTodo must be used within a TodoProvider");
+  }
+  return context;
+};
